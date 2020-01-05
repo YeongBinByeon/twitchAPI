@@ -22,8 +22,20 @@
             <button v-on:click="getGameStream"> getGameStream </button>
         </div>
         <div>
-            <button v-on:click="getData"> 호출 </button>
+            <button v-on:click="showTwitch"> 트위치 스트림 호출 </button>
         </div>
+
+        <div>
+            <input type="text" v-model="inputYoutubeText">
+        </div>
+        <div>
+            <button v-on:click="getYoutubeStream"> getYoutubeStream </button>
+        </div>
+        <div>
+            <button v-on:click="showYoutube"> 유튜브 스트림 호출 </button>
+        </div>
+
+        <h1> 트위치 live Stream </h1>
         <ul v-if="ok">
             <!--Vue의 v-for 함수로 list 안의 내용들을 반복문으로 뿌려줄 수 있다.-->
             <!-- (todoItem, index) 괄호로 메서드에 파라메타를 넘길 수 있다. -->
@@ -34,9 +46,26 @@
                     </a>
                     TITLE : {{item.title}}<br/>
                     USER_NAME : {{item.user_name}}<br/>
-                    VIEW_COUNT : {{item.viewer_count}}<br/>
+                    VIEW_COUNT : {{item.viewer_count}}  <br/>
                 </div>
 
+            </li>
+        </ul>
+
+        <h1> 유튜브 검색 결과 </h1>
+        <ul v-if="youtubeOk">
+            <!--Vue의 v-for 함수로 list 안의 내용들을 반복문으로 뿌려줄 수 있다.-->
+            <!-- (todoItem, index) 괄호로 메서드에 파라메타를 넘길 수 있다. -->
+            <li v-for="( item, index) in streamYoutubeList">
+                <div>
+                    <a v-bind:href="item.id.makedUrl">
+                        <img v-bind:src="item.snippet.thumbnails.high.url"/></br>
+                    </a>
+                    TITLE : {{item.snippet.title}}<br/>
+                    USER_NAME : {{item.snippet.channelTitle}}<br/>
+                    VIEW_COUNT : {{item.viewer_count}}<br/>
+                    <h2> LIVE ? : {{item.snippet.liveBroadcastContent}} </h2> <br/>
+                </div>
             </li>
         </ul>
     </div>
@@ -48,19 +77,27 @@
         el: '#app',
         data : {
             inputText: '',
+            inputYoutubeText: '',
             streamGameList : [],
-            ok:false
+            streamYoutubeList: [],
+            ok:false,
+            youtubeOk:false,
         },
         methods:{
-                  getData: function(){
+                  showTwitch: function(){
                     let gameID = localStorage.getItem(this.inputText);
-                      let tempList = [];
-                      this.ok=true;
-                      console.log(this.streamGameList);
-                      axios.get('https://api.twitch.tv/helix/streams?first=20&game_id='+gameID +'&language=ko')
-                      .then(function(response){
-                          //console.log(response);
-                      });
+                      if (this.ok === false){
+                           this.ok=true;
+                      }else{
+                           this.ok=false;
+                      }
+                  },
+                  showYoutube: function(){
+                      if (this.youtubeOk === false){
+                           this.youtubeOk=true;
+                      }else{
+                           this.youtubeOk=false;
+                      }
                   },
                   // {게임명:게임ID} DB 구축
                   getTopGamesInfo: function(){
@@ -107,6 +144,23 @@
                           }
                           console.log('-------');
                           console.log(this.streamGameList);
+                      });
+                  },
+                  getYoutubeStream: function(){
+                      axios.get('https://www.googleapis.com/youtube/v3/search?part=snippet&key=AIzaSyAZ54Gfv5gizxf1aYA6KCFiFZ9mUZCK###&regionCode=KR&type=video&maxResults=20&q=' + this.inputYoutubeText )
+                      .then((response) =>{
+                          console.log(response.data);
+                          console.log(response.data.pageInfo.resultsPerPage);
+                          console.log(response.data.items);
+                          for(let i=0; i<response.data.pageInfo.resultsPerPage; i++){
+                              console.log(response.data.items[i].id.videoId);
+                              console.log(response.data.items[i].snippet.title);
+                              console.log(response.data.items[i].snippet.channelTitle);
+                              console.log(response.data.items[i].snippet.thumbnails.high.url);
+                              console.log(response.data.items[i].snippet.liveBroadcastContent);
+                              response.data.items[i].id.makedUrl = "https://www.youtube.com/watch?v=" + response.data.items[i].id.videoId;
+                              this.streamYoutubeList.push(response.data.items[i]);
+                          }
                       });
                   }
                 }
